@@ -8,6 +8,7 @@
 import Foundation
 
 public protocol DataRequest {
+
     associatedtype Response: Decodable
 
     var url: String { get }
@@ -36,7 +37,7 @@ public extension DataRequest {
 
     func makeURLRequest() throws -> URLRequest {
         guard var urlComponents = URLComponents(string: url) else {
-            throw URLError(.badURL)
+            throw ServiceError.badURL
         }
 
         urlComponents.queryItems = queryItems.map {
@@ -44,7 +45,7 @@ public extension DataRequest {
         }
 
         guard let finalURL = urlComponents.url else {
-            throw URLError(.badURL)
+            throw ServiceError.badURL
         }
 
         var request = URLRequest(url: finalURL)
