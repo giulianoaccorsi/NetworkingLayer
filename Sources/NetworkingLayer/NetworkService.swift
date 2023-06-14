@@ -14,6 +14,8 @@ public protocol NetworkService {
 
 public final class DefaultNetworkService: NetworkService {
 
+    public init() {}
+
     public func request<Request: DataRequest>(_ request: Request) async throws -> Request.Response {
 
         guard var urlComponent = URLComponents(string: request.url) else {
