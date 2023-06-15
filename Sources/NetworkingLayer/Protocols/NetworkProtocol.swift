@@ -11,7 +11,8 @@ public protocol DataRequest {
 
     associatedtype Response: Decodable
 
-    var url: String { get }
+    var domain: String { get }
+    var path: String { get }
     var method: HTTPMethod { get }
     var headers: [String : String] { get }
     var queryItems: [String : String] { get }
@@ -36,7 +37,8 @@ public extension DataRequest {
     }
 
     func makeURLRequest() throws -> URLRequest {
-        guard var urlComponents = URLComponents(string: url) else {
+        let fullPath = domain + path
+        guard var urlComponents = URLComponents(string: fullPath) else {
             throw ServiceError.badURL
         }
 
