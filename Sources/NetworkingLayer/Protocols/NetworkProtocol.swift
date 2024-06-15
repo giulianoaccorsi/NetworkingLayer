@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol DataRequest {
+public protocol DataRequestProtocol {
 
     associatedtype Response: Decodable
 
@@ -17,12 +17,13 @@ public protocol DataRequest {
     var headers: [String : String] { get }
     var queryItems: [String : String] { get }
     var decoder: JSONDecoder { get }
+    var body: Data? { get }
 
     func makeURLRequest() throws -> URLRequest
     func decode(_ data: Data) throws -> Response
 }
 
-public extension DataRequest {
+public extension DataRequestProtocol {
 
     var headers: [String : String] {
         [:]
@@ -30,6 +31,10 @@ public extension DataRequest {
 
     var queryItems: [String : String] {
         [:]
+    }
+
+    var body: Data? {
+        nil
     }
 
     var decoder: JSONDecoder {
@@ -53,6 +58,7 @@ public extension DataRequest {
         var request = URLRequest(url: finalURL)
         request.httpMethod = method.rawValue
         request.allHTTPHeaderFields = headers
+        request.httpBody = body
 
         return request
     }

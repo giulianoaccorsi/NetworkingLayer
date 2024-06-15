@@ -6,22 +6,29 @@
 //
 
 import Foundation
+import Combine
 
 public protocol NetworkService {
-    func request<Request: DataRequest>(_ request: Request) async throws -> Request.Response
+    func request<Request: DataRequestProtocol>(
+        _ request: Request
+    ) async throws -> Request.Response
+
+    func request<Request: DataRequestProtocol>(
+        _ request: Request
+    )  throws -> AnyPublisher<Request.Response, Error>
 }
 
 public final class DefaultNetworkService: NetworkService {
+    private let session: URLSession
 
-    public init() {}
+    public init(session: URLSession = .shared) {
+        self.session = session
+    }
 
-    public func request<Request: DataRequest>(_ request: Request) async throws -> Request.Response {
+    public func request<Request: DataRequestProtocol>(_ request: Request) async throws -> Request.Response {
+        let urlRequest = try request.makeURLRequest()
 
-        guard let urlRequestURL = try request.makeURLRequest().url else {
-            throw ServiceError.badURL
-        }
-
-        let (data, response) = try await URLSession.shared.data(from: urlRequestURL)
+        let (data, response) = try await session.data(for: urlRequest)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw ServiceError.noResponse
@@ -31,7 +38,27 @@ public final class DefaultNetworkService: NetworkService {
             throw ServiceError.invalidStatusCode(httpResponse.statusCode)
         }
 
-
         return try request.decode(data)
+    }
+
+    public func request<Request: DataRequestProtocol>(_ request: Request) throws -> AnyPublisher<Request.Response, Error> {
+        let urlRequest = try request.makeURLRequest()
+
+        return session.dataTaskPublisher(for: urlRequest)
+            .tryMap { output in
+                guard let httpResponse = output.response as? HTTPURLResponse,
+                      200..<300 ~= httpResponse.statusCode else {
+                    throw ServiceError.invalidStatusCode((output.response as? HTTPURLResponse)?.statusCode ?? 0)
+                }
+                return output.data
+            }
+            .tryMap { data in
+                guard !data.isEmpty else {
+                    throw ServiceError.badURL
+                }
+                return data
+            }
+            .decode(type: Request.Response.self, decoder: JSONDecoder())
+            .eraseToAnyPublisher()
     }
 }
