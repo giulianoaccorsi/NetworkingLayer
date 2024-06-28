@@ -1,11 +1,12 @@
 //
 //  NetworkProtocol.swift
-//  
 //
-//  Created by Giuliano Accorsi on 13/06/23.
+//
+//  Created by Giuliano Accorsi on 27/06/24.
 //
 
 import Foundation
+import Commons
 
 public protocol DataRequestProtocol {
 

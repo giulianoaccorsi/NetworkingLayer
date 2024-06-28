@@ -1,5 +1,5 @@
 import XCTest
-@testable import NetworkingLayer
+@testable import TaskNetworking
 
 final class NetworkingLayerTests: XCTestCase {
     func testExample() throws {

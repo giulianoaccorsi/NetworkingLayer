@@ -5,20 +5,42 @@ import PackageDescription
 let package = Package(
     name: "NetworkingLayer",
     platforms: [
-        .iOS(.v15)
+        .iOS(.v16)
     ],
     products: [
         .library(
-            name: "NetworkingLayer",
-            targets: ["NetworkingLayer"]
+            name: "TaskNetworking",
+            targets: ["TaskNetworking"]
+        ),
+        .library(
+            name: "CombineNetworking",
+            targets: ["CombineNetworking"]
         ),
     ],
     targets: [
         .target(
-            name: "NetworkingLayer"),
+            name: "TaskNetworking",
+            dependencies: ["Commons"],
+            path: "Sources/TaskNetworking"
+        ),
         .testTarget(
-            name: "NetworkingLayerTests",
-            dependencies: ["NetworkingLayer"]
+            name: "TaskNetworkingTests",
+            dependencies: ["TaskNetworking"],
+            path: "Tests/TaskNetworkingTests"
+        ),
+        .target(
+            name: "CombineNetworking",
+            dependencies: ["Commons"],
+            path: "Sources/CombineNetworking"
+        ),
+        .testTarget(
+            name: "CombineNetworkingTests",
+            dependencies: ["CombineNetworking"],
+            path: "Tests/CombineNetworkingTests"
+        ),
+        .target(
+            name: "Commons",
+            path: "Sources/Commons"
         ),
     ]
 )
