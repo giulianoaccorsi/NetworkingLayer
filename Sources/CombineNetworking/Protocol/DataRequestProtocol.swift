@@ -15,7 +15,7 @@ public protocol DataRequestProtocol {
 
     var domain: String { get }
     var path: String { get }
-    var method: HTTPMethod { get }
+    var method: Commons.HTTPMethod { get }
     var headers: [String : String] { get }
     var queryItems: [String : String] { get }
     var decoder: JSONDecoder { get }
