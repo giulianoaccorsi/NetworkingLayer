@@ -6,7 +6,8 @@
 //
 
 import Foundation
-class MockURLProtocol: URLProtocol {
+
+final class MockURLProtocol: URLProtocol {
     static var responseData: Data?
     static var response: URLResponse?
     static var error: Error?

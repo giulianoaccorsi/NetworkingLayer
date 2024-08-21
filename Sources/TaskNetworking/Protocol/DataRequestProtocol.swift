@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import Commons
+@_exported import Commons
 
 public protocol DataRequestProtocol {
 
@@ -47,9 +47,11 @@ public extension DataRequestProtocol {
         guard var urlComponents = URLComponents(string: fullPath) else {
             throw ServiceError.badURL
         }
-
-        urlComponents.queryItems = queryItems.map {
-            URLQueryItem(name: $0.key, value: $0.value)
+        
+        if !queryItems.isEmpty {
+            urlComponents.queryItems = queryItems.map {
+                URLQueryItem(name: $0.key, value: $0.value)
+            }
         }
 
         guard let finalURL = urlComponents.url else {

@@ -7,8 +7,8 @@
 
 
 import Foundation
-import Commons
 import Combine
+@_exported import Commons
 
 public protocol DataRequestProtocol {
     associatedtype Response: Decodable
@@ -78,7 +78,6 @@ public extension DataRequestProtocol {
                 return .failure(error)
             }
         }()
-
         return result.publisher.eraseToAnyPublisher()
     }
 }

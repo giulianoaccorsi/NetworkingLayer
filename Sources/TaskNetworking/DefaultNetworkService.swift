@@ -6,7 +6,7 @@
 //
 
 import Foundation
-import Commons
+@_exported import Commons
 
 public protocol NetworkService {
     func request<Request: DataRequestProtocol>(

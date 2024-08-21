@@ -7,20 +7,7 @@
 
 import XCTest
 import Combine
-import Commons
-
 @testable import CombineNetworking
-
-struct MockRequest: DataRequestProtocol {
-    typealias Response = String
-
-    var domain: String = "mock"
-
-    var path: String = "/mock"
-
-    var method: Commons.HTTPMethod = .get
-
-}
 
 final class CombineNetworkingTests: XCTestCase {
 
@@ -48,7 +35,6 @@ final class CombineNetworkingTests: XCTestCase {
     }
 
     func testRequestReturnsServiceErrorForStatusCode400() {
-        // Given
         let response = HTTPURLResponse(
             url: URL(string: "https://mockurl.com")!,
             statusCode: 400,
@@ -62,7 +48,6 @@ final class CombineNetworkingTests: XCTestCase {
 
         let expectation = XCTestExpectation(description: "Request fails with invalid status code")
 
-        // When
         networkService.request(MockRequest())
             .sink(receiveCompletion: { completion in
                 if case let .failure(error) = completion {
@@ -79,7 +64,6 @@ final class CombineNetworkingTests: XCTestCase {
     }
 
     func testRequestSuccess() {
-        // Given
         let response = HTTPURLResponse(
             url: URL(string: "https://mockurl.com")!,
             statusCode: 200,
@@ -97,7 +81,6 @@ final class CombineNetworkingTests: XCTestCase {
 
         let expectation = XCTestExpectation(description: "Request completes successfully")
 
-        // When
         networkService.request(MockRequest())
             .sink(receiveCompletion: { completion in
                 if case let .failure(error) = completion {
@@ -111,4 +94,105 @@ final class CombineNetworkingTests: XCTestCase {
 
         wait(for: [expectation], timeout: 1.0)
     }
+
+    func testMakeURLRequestPublisherWithQueryItemsAndHeaders() {
+        struct RequestWithQueryItemsAndHeaders: DataRequestProtocol {
+            typealias Response = String
+
+            var domain: String = "https://mockurl.com"
+            var path: String = "/test"
+            var method: Commons.HTTPMethod = .get
+            var headers: [String: String] = ["Authorization": "Bearer token"]
+            var queryItems: [String: String] = ["name": "pikachu"]
+        }
+
+        let request = RequestWithQueryItemsAndHeaders()
+
+        let expectation = XCTestExpectation(description: "URLRequest is created with correct query items and headers")
+
+        request.makeURLRequestPublisher()
+            .sink(receiveCompletion: { completion in
+                if case let .failure(error) = completion {
+                    XCTFail("Request failed with error: \(error)")
+                }
+            }, receiveValue: { urlRequest in
+                XCTAssertEqual(urlRequest.url?.absoluteString, "https://mockurl.com/test?name=pikachu")
+                XCTAssertEqual(urlRequest.allHTTPHeaderFields?["Authorization"], "Bearer token")
+                XCTAssertEqual(urlRequest.httpMethod, "GET")
+                expectation.fulfill()
+            })
+            .store(in: &cancellables)
+
+        wait(for: [expectation], timeout: 1.0)
+    }
+
+    func testDecodeValidJSON() {
+        struct MockResponse: Decodable, Equatable {
+            let id: Int
+            let name: String
+        }
+
+        struct Request: DataRequestProtocol {
+            typealias Response = MockResponse
+
+            var domain: String = "https://mockurl.com"
+            var path: String = "/test"
+            var method: Commons.HTTPMethod = .get
+        }
+
+        let request = Request()
+
+        let jsonData = """
+        {
+            "id": 1,
+            "name": "Pikachu"
+        }
+        """.data(using: .utf8)!
+
+        let expectation = XCTestExpectation(description: "Response is decoded correctly")
+
+        request.decode(jsonData)
+            .sink(receiveCompletion: { completion in
+                if case let .failure(error) = completion {
+                    XCTFail("Decoding failed with error: \(error)")
+                }
+            }, receiveValue: { response in
+                XCTAssertEqual(response, MockResponse(id: 1, name: "Pikachu"))
+                expectation.fulfill()
+            })
+            .store(in: &cancellables)
+
+        wait(for: [expectation], timeout: 1.0)
+    }
+
+    func testDecodeInvalidJSON() {
+        struct Request: DataRequestProtocol {
+            typealias Response = String
+
+            var domain: String = "https://mockurl.com"
+            var path: String = "/test"
+            var method: Commons.HTTPMethod = .get
+        }
+
+        let request = Request()
+
+        let invalidJsonData = "invalid json".data(using: .utf8)!
+
+        let expectation = XCTestExpectation(description: "Decoding fails with invalid JSON")
+
+        request.decode(invalidJsonData)
+            .sink(receiveCompletion: { completion in
+                if case let .failure(error) = completion {
+                    XCTAssertTrue(error is DecodingError)
+                    expectation.fulfill()
+                }
+            }, receiveValue: { _ in
+                XCTFail("Decoding succeeded unexpectedly")
+            })
+            .store(in: &cancellables)
+
+        wait(for: [expectation], timeout: 1.0)
+    }
+
+
 }

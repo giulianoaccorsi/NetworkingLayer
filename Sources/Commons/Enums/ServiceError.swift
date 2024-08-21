@@ -13,7 +13,7 @@ public enum ServiceError: Error {
     case noResponse
     case invalidStatusCode(Int)
     case noData
-
+    
     var localizedDescription: String {
         switch self {
         case .invalidEndpoint:
@@ -51,7 +51,7 @@ extension ServiceError: LocalizedError {
     public var errorDescription: String? {
         return localizedDescription
     }
-
+    
     public var failureReason: String? {
         switch self {
         case .invalidEndpoint:
@@ -81,7 +81,7 @@ extension ServiceError: LocalizedError {
             )
         }
     }
-
+    
     public var recoverySuggestion: String? {
         switch self {
         case .invalidEndpoint:
