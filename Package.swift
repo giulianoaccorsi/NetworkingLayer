@@ -1,46 +1,36 @@
-// swift-tools-version: 5.8
+// swift-tools-version: 6.0
 
 import PackageDescription
 
 let package = Package(
     name: "NetworkingLayer",
     platforms: [
-        .iOS(.v16)
+        .iOS(.v15),
+        .macOS(.v12),
+        .tvOS(.v15),
+        .watchOS(.v8)
     ],
     products: [
         .library(
-            name: "TaskNetworking",
-            targets: ["TaskNetworking"]
-        ),
-        .library(
-            name: "CombineNetworking",
-            targets: ["CombineNetworking"]
-        ),
+            name: "NetworkingLayer",
+            targets: ["NetworkingLayer"]
+        )
+    ],
+    dependencies: [
+        // Add dependencies here if needed in the future
     ],
     targets: [
         .target(
-            name: "TaskNetworking",
-            dependencies: ["Commons"],
-            path: "Sources/TaskNetworking"
+            name: "NetworkingLayer",
+            path: "Sources/NetworkingLayer",
+            resources: [
+                .process("Resources")
+            ]
         ),
         .testTarget(
-            name: "TaskNetworkingTests",
-            dependencies: ["TaskNetworking"],
-            path: "Tests/TaskNetworkingTests"
-        ),
-        .target(
-            name: "CombineNetworking",
-            dependencies: ["Commons"],
-            path: "Sources/CombineNetworking"
-        ),
-        .testTarget(
-            name: "CombineNetworkingTests",
-            dependencies: ["CombineNetworking"],
-            path: "Tests/CombineNetworkingTests"
-        ),
-        .target(
-            name: "Commons",
-            path: "Sources/Commons"
+            name: "NetworkingLayerTests",
+            dependencies: ["NetworkingLayer"],
+            path: "Tests/NetworkingLayerTests"
         ),
     ]
 )
