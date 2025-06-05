@@ -1,20 +1,22 @@
+//
+//  BasicDemos.swift
+//  NetworkingExample
+//
+//  Created by Giuliano Accorsi on 05/06/25.
+//
+
 import Foundation
 import NetworkingLayer
 
-// MARK: - Basic Demo Functions
-
-/// Demonstrates basic GET requests with simple DataRequestProtocol usage
 func demonstrateBasicRequests(service: NetworkService) async {
     print("\n📋 Basic Requests Demo")
     print("-" * 40)
     
     do {
-        // Simple GET request
         print("1️⃣ Fetching all posts...")
         let posts = try await service.request(GetPostsRequest())
         print("   ✅ Fetched \(posts.count) posts")
         
-        // GET request with path parameter
         if let firstPost = posts.first {
             print("2️⃣ Fetching user #\(firstPost.userId)...")
             let user = try await service.request(GetUserRequest(userId: firstPost.userId))
@@ -29,7 +31,6 @@ func demonstrateBasicRequests(service: NetworkService) async {
     }
 }
 
-/// Demonstrates different retry strategies and policies
 func demonstrateRetryStrategies() async {
     print("\n🔄 Retry Strategies Demo")
     print("-" * 40)
@@ -52,15 +53,13 @@ func demonstrateRetryStrategies() async {
     }
 }
 
-/// Demonstrates comprehensive error handling for different error scenarios
 func demonstrateErrorHandling(service: NetworkService) async {
     print("\n🚨 Error Handling Showcase")
     print("-" * 40)
     
-    // Test different error scenarios
     let errorTests = [
         ("404 Not Found", GetUserRequest(userId: 99999)),
-        ("Invalid Endpoint", GetUserRequest(userId: 999999))  // This might also return 404
+        ("Invalid Endpoint", GetUserRequest(userId: 999999))
     ]
     
     for (testName, request) in errorTests {

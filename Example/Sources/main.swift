@@ -1,7 +1,12 @@
+//
+//  main.swift
+//  NetworkingExample
+//
+//  Created by Giuliano Accorsi on 05/06/25.
+//
+
 import Foundation
 import NetworkingLayer
-
-// MARK: - Builder Patterns Demo
 
 extension String {
     static func *(lhs: String, rhs: Int) -> String {
@@ -27,24 +32,19 @@ struct BuilderPatternsDemo {
     }
 }
 
-// MARK: - 1. DataRequestProtocol Pattern
-
 func demoDataRequestProtocol(service: NetworkService) async {
     print("\n🎯 DataRequestProtocol Pattern")
     print("-" * 40)
     
     do {
-        // Simple GET request
         print("📥 Fetching posts...")
         let posts = try await service.request(GetPostsRequest())
         print("✅ Fetched \(posts.count) posts")
         
-        // GET with pagination
         print("📄 Fetching paginated posts...")
         let paginatedPosts = try await service.request(PostsWithPaginationRequest(page: 1, limit: 3))
         print("✅ Fetched \(paginatedPosts.count) posts (page 1)")
         
-        // POST with JSON body
         print("📝 Creating new post...")
         let postData = CreatePostData(userId: 1, title: "New Post", body: "Post content")
         let newPost = try await service.request(CreatePostRequest(postData: postData))
@@ -55,14 +55,11 @@ func demoDataRequestProtocol(service: NetworkService) async {
     }
 }
 
-// MARK: - 2. URLRequestBuilder Pattern
-
 func demoURLRequestBuilder() async {
     print("\n🔧 URLRequestBuilder Pattern")
     print("-" * 40)
     
     do {
-        // GET request with builder
         print("🌐 Building GET request...")
         let getRequest = try URLRequestBuilder
             .get("https://jsonplaceholder.typicode.com/posts")
@@ -76,7 +73,6 @@ func demoURLRequestBuilder() async {
         let posts = try JSONDecoder().decode([Post].self, from: data)
         print("✅ Fetched \(posts.count) posts using URLRequestBuilder")
         
-        // POST request with JSON body
         print("📤 Building POST request...")
         let postData = CreatePostData(userId: 1, title: "Builder Post", body: "Created with URLRequestBuilder")
         
@@ -91,8 +87,7 @@ func demoURLRequestBuilder() async {
         let (responseData, _) = try await URLSession.shared.data(for: postRequest)
         let createdPost = try JSONDecoder().decode(Post.self, from: responseData)
         print("✅ Created post with ID: \(createdPost.id)")
-        
-        // Form data example
+
         print("📋 Building form data request...")
         let formRequest = try URLRequestBuilder()
             .url("https://jsonplaceholder.typicode.com/posts")
@@ -114,14 +109,11 @@ func demoURLRequestBuilder() async {
     }
 }
 
-// MARK: - 3. RequestConfigurator Pattern
-
 func demoRequestConfigurator() async {
     print("\n⚙️ RequestConfigurator Pattern")
     print("-" * 40)
     
     do {
-        // Fluent API chaining
         print("🔗 Using fluent API...")
         let request = RequestConfigurator(
             url: URL(string: "https://jsonplaceholder.typicode.com/users/1")!
@@ -136,7 +128,6 @@ func demoRequestConfigurator() async {
         let user = try JSONDecoder().decode(User.self, from: data)
         print("✅ Fetched user: \(user.name) (\(user.email))")
         
-        // Complex POST configuration
         print("📝 Complex POST configuration...")
         let postData = CreatePostData(
             userId: 2,
@@ -165,14 +156,11 @@ func demoRequestConfigurator() async {
     }
 }
 
-// MARK: - 4. Result Builder Pattern
-
 func demoResultBuilder() async {
     print("\n🏗️ @resultBuilder Pattern")
     print("-" * 40)
     
     do {
-        // Using @resultBuilder syntax
         print("🔨 Using result builder syntax...")
         let builderRequest = URLRequest(
             url: URL(string: "https://jsonplaceholder.typicode.com/posts")!,
@@ -188,7 +176,6 @@ func demoResultBuilder() async {
         let posts = try JSONDecoder().decode([Post].self, from: data)
         print("✅ Fetched \(posts.count) posts using @resultBuilder")
         
-        // POST with result builder
         print("📤 POST with result builder...")
         let postData = CreatePostData(
             userId: 3,
@@ -215,13 +202,10 @@ func demoResultBuilder() async {
     }
 }
 
-// MARK: - 5. Retry Strategies
-
 func demoRetryPolicies() async {
     print("\n🔄 Retry Strategies")
     print("-" * 40)
     
-    // No Retry Strategy
     print("🚫 Testing No Retry...")
     let noRetryService = NetworkServiceWithRetry.withoutRetry()
     do {
@@ -230,7 +214,6 @@ func demoRetryPolicies() async {
         print("✅ No retry - Failed immediately")
     }
     
-    // Linear Retry Strategy
     print("📈 Testing Linear Retry...")
     let linearService = NetworkServiceWithRetry.withLinearRetry(maxRetries: 2, delay: 0.1)
     do {
@@ -239,7 +222,6 @@ func demoRetryPolicies() async {
         print("✅ Linear retry - Failed after retries")
     }
     
-    // Exponential Backoff Strategy
     print("📊 Testing Exponential Backoff...")
     let exponentialService = NetworkServiceWithRetry.withExponentialBackoff(
         maxRetries: 2,
@@ -253,15 +235,11 @@ func demoRetryPolicies() async {
     }
 }
 
-// MARK: - 6. Error Handling
-
 func demoErrorHandling() async {
     print("\n❌ Error Handling")
     print("-" * 40)
     
     let service = DefaultNetworkService()
-    
-    // 404 Error handling
     print("🔍 Testing 404 error...")
     do {
         _ = try await service.request(GetUserRequest(userId: 99999))
@@ -278,7 +256,6 @@ func demoErrorHandling() async {
         print("✅ Generic error: \(error)")
     }
     
-    // Bad URL Error
     print("🌐 Testing bad URL...")
     do {
         let badRequest = try URLRequestBuilder
@@ -290,5 +267,4 @@ func demoErrorHandling() async {
     }
 }
 
-// Run the demo
-await BuilderPatternsDemo.runDemo() 
+await BuilderPatternsDemo.runDemo()

@@ -1,9 +1,14 @@
+//
+//  AdvancedRequests.swift
+//  NetworkingExample
+//
+//  Created by Giuliano Accorsi on 05/06/25.
+//
+
+
 import Foundation
 import NetworkingLayer
 
-// MARK: - Advanced API Requests
-
-/// Request with pagination using query parameters
 struct PostsWithPaginationRequest: DataRequestProtocol {
     typealias Response = [Post]
     
@@ -22,7 +27,6 @@ struct PostsWithPaginationRequest: DataRequestProtocol {
     }
 }
 
-/// Search request with multiple query parameters and custom headers
 struct SearchPostsRequest: DataRequestProtocol {
     typealias Response = [Post]
     
@@ -49,7 +53,6 @@ struct SearchPostsRequest: DataRequestProtocol {
     }
 }
 
-/// POST request with JSON body
 struct CreatePostRequest: DataRequestProtocol {
     typealias Response = Post
     
@@ -71,7 +74,6 @@ struct CreatePostRequest: DataRequestProtocol {
     }
 }
 
-/// PUT request with JSON body for updating resources
 struct UpdateUserRequest: DataRequestProtocol {
     typealias Response = User
     
