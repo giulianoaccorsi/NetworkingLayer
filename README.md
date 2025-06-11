@@ -1,295 +1,293 @@
-# 🌐 NetworkModule
+# 🌐 NetworkingLayer
 
-Um módulo moderno, abstrato e independente de rede para Swift com async/await (iOS 18+).
+Módulo de Networking Reutilizável com API Fluente para iOS 18+ com suporte a async/await.
 
 ## ✨ Características
 
-- 🚀 **Moderno**: Utiliza async/await e está otimizado para iOS 18+
-- 🛡️ **Type-Safe**: Tipagem forte com protocolos e genéricos
-- 🧱 **Modular**: Estrutura bem organizada e fácil de entender
-- 🔌 **Plugável**: Interface baseada em protocolos, totalmente mockável
-- 🎯 **Independente**: Sem dependências externas, apenas URLSession
-- 🧪 **Testável**: Mock client incluído para testes
+- 🚀 **Moderno**: Utiliza async/await otimizado para iOS 18+
+- 🧱 **Builder Pattern**: Interface fluente e encadeável para criar requisições HTTP
+- 🎯 **Type-Safe**: Tipagem forte com enums e protocolos
+- 🔌 **Testável**: Interface baseada em protocolos, totalmente mockável  
+- 🌍 **Localizado**: Mensagens de erro em PT-BR e EN
+- 🛡️ **Independente**: Sem dependências externas, apenas URLSession
 
-## 📁 Estrutura do Módulo
-
-```
-NetworkingLayer/
-├── Core/
-│   ├── NetworkClient.swift           // ✅ Implementação genérica
-│   └── NetworkError.swift            // ✅ Erros tipados
-├── Protocols/
-│   ├── NetworkClientProtocol.swift   // ✅ Interface pública
-│   └── EndpointProtocol.swift        // ✅ Como definir endpoints
-├── Configuration/
-│   └── NetworkConfiguration.swift    // ✅ Configuração injetável
-├── Helpers/
-│   └── HTTPMethod.swift              // ✅ Métodos HTTP
-└── PublicAPI/
-    └── NetworkModule.swift           // ✅ Ponto de entrada público
-```
 
 ## 🚀 Instalação
+
+### Swift Package Manager
 
 Adicione ao seu `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/seu-usuario/NetworkModule.git", from: "1.0.0")
+    .package(url: "https://github.com/seu-usuario/NetworkingLayer.git", from: "1.0.0")
 ]
 ```
 
 ## 📖 Como Usar
 
-### 1. Cliente Básico
+### 1. Uso Básico com Builder Pattern
 
 ```swift
 import NetworkingLayer
 
-// Criar cliente simples
-let client = NetworkModule.createClient(baseURL: "https://api.exemplo.com")
+// Criar o client
+let client = NetworkModule.defaultClient
 
-// Usar métodos de conveniência
-let users: [User] = try await client.get(
-    path: "/users",
+// Criar requisição usando Builder Pattern (Exemplo do prompt)
+let request = URLRequestBuilder()
+    .path("https://www.teste.com.br/pokemon")
+    .method(.get)
+    .headers([.json, .custom("teste", "meme")])
+    .body(.custom(["login": "giulianoaccorsi@gmail.com"]))
+    .authentication(.bearer("token123"))
+
+// Executar a requisição
+struct PokemonResult: Codable {
+    let name: String
+    let url: String
+}
+
+struct PokemonList: Codable {
+    let results: [PokemonResult]
+}
+
+let result = try await client.request(
+    endpoint: request,
+    responseType: PokemonList.self
+)
+
+print("Pokémons encontrados: \(result.results.count)")
+```
+
+### 2. Métodos de Conveniência
+
+```swift
+// GET simples
+let getRequest = URLRequestBuilder.get("https://jsonplaceholder.typicode.com/posts/1")
+    .headers([.json])
+    .authentication(.bearer("token"))
+
+// POST com dados
+let postRequest = URLRequestBuilder.post("https://jsonplaceholder.typicode.com/posts")
+    .headers([.json])
+    .body(.custom([
+        "title": "Meu Post",
+        "body": "Conteúdo do post",
+        "userId": 1
+    ]))
+
+// PUT para atualização
+let putRequest = URLRequestBuilder.put("https://jsonplaceholder.typicode.com/posts/1")
+    .headers([.json])
+    .body(.json(myModel))
+
+// DELETE
+let deleteRequest = URLRequestBuilder.delete("https://jsonplaceholder.typicode.com/posts/1")
+    .authentication(.bearer("token"))
+```
+
+### 3. Diferentes Tipos de Corpo (HTTPBody)
+
+```swift
+// Sem corpo
+.body(.none)
+
+// Dados brutos
+.body(.raw(jsonData))
+
+// Modelo Codable
+.body(.json(user))
+
+// Dicionário customizado
+.body(.custom(["key": "value"]))
+
+// String simples
+.body(.string("Hello World"))
+```
+
+### 4. Headers e Autenticação
+
+```swift
+let request = URLRequestBuilder()
+    .path("https://api.exemplo.com/data")
+    .method(.post)
+    // Headers predefinidos
+    .headers([
+        .json,              // Content-Type: application/json
+        .xml,               // Content-Type: application/xml
+        .formURLEncoded     // Content-Type: application/x-www-form-urlencoded
+    ])
+    // Headers customizados
+    .header(.custom("X-API-Key", "12345"))
+    .header(.custom("User-Agent", "MeuApp/1.0"))
+    // Autenticação
+    .authentication(.bearer("token123"))
+    // Ou autenticação básica
+    .authentication(.basic(username: "user", password: "pass"))
+    // Ou API Key customizada
+    .authentication(.apiKey("X-API-Key", "secret"))
+```
+
+### 5. Configurações Avançadas
+
+```swift
+let request = URLRequestBuilder()
+    .path("https://api.exemplo.com/upload")
+    .method(.post)
+    .timeout(120.0)  // 2 minutos
+    .cachePolicy(.reloadIgnoringLocalCacheData)
+    .body(.raw(imageData))
+```
+
+### 6. Diferentes Formas de Resposta
+
+```swift
+// Com decodificação automática
+let users: [User] = try await client.request(
+    endpoint: request,
     responseType: [User].self
 )
+
+// Apenas dados brutos
+let data: Data = try await client.request(endpoint: request)
+
+// Sem retorno (para POST/PUT/DELETE)
+try await client.request(endpoint: request)
 ```
 
-### 2. Endpoints Estruturados (Recomendado)
 
-```swift
-// Definir seus endpoints
-struct GetUsersEndpoint: SimpleGetEndpoint {
-    let path = "/users"
-}
-
-struct CreateUserEndpoint: PostEndpoint {
-    typealias Body = CreateUserRequest
-    
-    let path = "/users"
-    let requestBody: CreateUserRequest
-    
-    init(name: String, email: String) {
-        self.requestBody = CreateUserRequest(name: name, email: email)
-    }
-}
-
-// Usar nos seus services
-final class UserService {
-    private let client: NetworkClientProtocol
-    
-    init(client: NetworkClientProtocol) {
-        self.client = client
-    }
-    
-    func getUsers() async throws -> [User] {
-        return try await client.request(
-            endpoint: GetUsersEndpoint(),
-            responseType: [User].self
-        )
-    }
-    
-    func createUser(name: String, email: String) async throws -> User {
-        return try await client.request(
-            endpoint: CreateUserEndpoint(name: name, email: email),
-            responseType: User.self
-        )
-    }
-}
-```
-
-### 3. Cliente com Autenticação
-
-```swift
-let client = NetworkModule.createAPIClient(
-    baseURL: "https://api.exemplo.com",
-    bearerToken: "seu-token-aqui"
-)
-
-// Ou com API Key
-let client = NetworkModule.createAPIClient(
-    baseURL: "https://api.exemplo.com",
-    apiKey: "sua-api-key"
-)
-```
-
-### 4. Configuração Personalizada
-
-```swift
-let configuration = NetworkConfiguration(
-    baseURL: "https://api.exemplo.com",
-    defaultHeaders: [
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "User-Agent": "MeuApp/1.0"
-    ],
-    timeoutInterval: 60.0,
-    allowsCellularAccess: true
-)
-
-let client = NetworkModule.createClient(configuration: configuration)
-```
-
-### 5. Decodificadores Personalizados
-
-```swift
-let decoder = JSONDecoder()
-decoder.keyDecodingStrategy = .convertFromSnakeCase
-decoder.dateDecodingStrategy = .iso8601
-
-let client = NetworkModule.createClient(
-    configuration: configuration,
-    decoder: decoder,
-    encoder: JSONEncoder()
-)
-```
-
-## 🧪 Testes com Mock
-
-```swift
-#if DEBUG
-let mockClient = NetworkModule.createMockClient() as! MockNetworkClient
-
-// Configurar dados mock
-let mockUsers = [User(id: 1, name: "João", email: "joao@exemplo.com")]
-try mockClient.setMockData(mockUsers)
-mockClient.requestDelay = 0.5 // Simular delay
-
-let userService = UserService(client: mockClient)
-let users = try await userService.getUsers()
-#endif
-```
-
-## 🎯 Protocolos de Conveniência
-
-### Para GET simples:
-```swift
-struct GetUsersEndpoint: SimpleGetEndpoint {
-    let path = "/users"
-}
-```
-
-### Para POST com body:
-```swift
-struct CreateUserEndpoint: PostEndpoint {
-    typealias Body = CreateUserRequest
-    let path = "/users"
-    let requestBody: CreateUserRequest
-}
-```
-
-### Para PUT com body:
-```swift
-struct UpdateUserEndpoint: PutEndpoint {
-    typealias Body = UpdateUserRequest
-    let path = "/users/123"
-    let requestBody: UpdateUserRequest
-}
-```
-
-### Para DELETE:
-```swift
-struct DeleteUserEndpoint: DeleteEndpoint {
-    let path = "/users/123"
-}
-```
-
-## ❗ Tratamento de Erros
+### Tratamento Prático
 
 ```swift
 do {
-    let users = try await userService.getUsers()
-} catch NetworkError.statusCode(let code, _) {
-    print("Erro HTTP: \(code)")
-} catch NetworkError.decodingError(let error) {
-    print("Erro de decodificação: \(error)")
-} catch NetworkError.networkError(let error) {
-    print("Erro de rede: \(error)")
-} catch NetworkError.timeout {
-    print("Timeout na requisição")
+    let users = try await client.request(
+        endpoint: request,
+        responseType: [User].self
+    )
+    // Sucesso!
+} catch NetworkError.unauthorized {
+    // Usuário não autorizado - redirecionar para login
+    showLoginScreen()
+} catch NetworkError.noInternetConnection {
+    // Sem internet - mostrar mensagem amigável
+    showNoInternetAlert()
+} catch NetworkError.decodingFailed {
+    // Erro ao processar dados do servidor
+    showDataErrorAlert()
+} catch let error as NetworkError {
+    // Outros erros de rede
+    showErrorAlert(message: error.localizedDescription)
 } catch {
-    print("Erro: \(error.localizedDescription)")
+    // Erros gerais
+    showErrorAlert(message: error.localizedDescription)
 }
 ```
 
-## 🔧 Exemplo Completo de Integração
+## 🔧 Exemplo Completo - Service Layer
 
 ```swift
-// Seus modelos
-struct User: Codable, Sendable {
+import NetworkingLayer
+
+// MARK: - Models
+struct User: Codable {
     let id: Int
     let name: String
     let email: String
 }
 
-// Seus endpoints
-struct GetUsersEndpoint: SimpleGetEndpoint {
-    let path = "/users"
+struct CreateUserRequest: Codable {
+    let name: String
+    let email: String
 }
 
-// Seu service
+// MARK: - User Service
 final class UserService {
     private let client: NetworkClientProtocol
     
-    init(client: NetworkClientProtocol) {
+    init(client: NetworkClientProtocol = NetworkModule.defaultClient) {
         self.client = client
     }
     
     func getUsers() async throws -> [User] {
-        try await client.request(
-            endpoint: GetUsersEndpoint(),
+        let request = URLRequestBuilder.get("https://jsonplaceholder.typicode.com/users")
+            .headers([.json])
+        
+        return try await client.request(
+            endpoint: request,
             responseType: [User].self
         )
     }
+    
+    func createUser(name: String, email: String) async throws -> User {
+        let request = URLRequestBuilder.post("https://jsonplaceholder.typicode.com/users")
+            .headers([.json])
+            .body(.custom([
+                "name": name,
+                "email": email
+            ]))
+        
+        return try await client.request(
+            endpoint: request,
+            responseType: User.self
+        )
+    }
+    
+    func updateUser(id: Int, name: String, email: String) async throws -> User {
+        let request = URLRequestBuilder.put("https://jsonplaceholder.typicode.com/users/\(id)")
+            .headers([.json])
+            .body(.json(CreateUserRequest(name: name, email: email)))
+        
+        return try await client.request(
+            endpoint: request,
+            responseType: User.self
+        )
+    }
+    
+    func deleteUser(id: Int) async throws {
+        let request = URLRequestBuilder.delete("https://jsonplaceholder.typicode.com/users/\(id)")
+        
+        try await client.request(endpoint: request)
+    }
 }
 
-// Configuração no app
-class AppContainer {
-    lazy var networkClient: NetworkClientProtocol = {
-        NetworkModule.createAPIClient(
-            baseURL: "https://api.exemplo.com",
-            bearerToken: AuthManager.shared.token
-        )
-    }()
+// MARK: - Usage in SwiftUI
+@Observable
+class UserViewModel {
+    var users: [User] = []
+    var isLoading = false
+    var errorMessage: String?
     
-    lazy var userService = UserService(client: networkClient)
+    private let userService = UserService()
+    
+    func loadUsers() async {
+        isLoading = true
+        errorMessage = nil
+        
+        do {
+            users = try await userService.getUsers()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        
+        isLoading = false
+    }
 }
 ```
 
-## 🎛️ Factory Methods Disponíveis
+## 🎯 Funções Globais de Conveniência
 
 ```swift
-// Cliente básico
-NetworkModule.createClient(baseURL: "https://api.exemplo.com")
+// Em vez de URLRequestBuilder.get()
+let request = get("https://api.example.com/users")
+    .headers([.json])
 
-// Cliente com autenticação
-NetworkModule.createAPIClient(baseURL: "https://api.exemplo.com", bearerToken: "token")
+// Em vez de URLRequestBuilder.post()
+let request = post("https://api.example.com/users")
+    .body(.json(user))
 
-// Cliente para debug
-NetworkModule.createDebugClient(baseURL: "https://api.exemplo.com")
-
-// Cliente com configuração personalizada
-NetworkModule.createClient(configuration: customConfig)
-
-// Cliente mock para testes
-NetworkModule.createMockClient() // Apenas em DEBUG
+// Outros métodos disponíveis
+put("https://api.example.com/users/1")
+delete("https://api.example.com/users/1")
+patch("https://api.example.com/users/1")
 ```
-
-## 📋 Requisitos
-
-- iOS 15.0+ / macOS 12.0+ / tvOS 15.0+ / watchOS 8.0+
-- Swift 5.9+
-- Xcode 15.0+
-
-## 🎯 Casos de Uso Ideais
-
-- ✅ APIs REST modernas
-- ✅ Projetos com múltiplos módulos/features
-- ✅ Apps que precisam de flexibilidade na configuração de rede
-- ✅ Projetos que valorizam testabilidade
-- ✅ Integração com SwiftUI e UIKit
-
-## 📄 Licença
-
-MIT License. Veja o arquivo LICENSE para detalhes.

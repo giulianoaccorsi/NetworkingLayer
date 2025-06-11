@@ -1,79 +1,80 @@
 import Foundation
 
-// MARK: - Network Error
-public enum NetworkError: Error, Sendable, LocalizedError {
-    case invalidURL
-    case noData
-    case invalidResponse
-    case statusCode(Int, Data?)
-    case decodingError(Error)
-    case encodingError(Error)
-    case networkError(Error)
+public enum NetworkError: LocalizedError, Equatable {
+    case badRequest
+    case unauthorized
+    case forbidden
+    case notFound
+    case serverError
+    case decodingFailed
+    case encodingFailed
     case timeout
-    case cancelled
+    case noInternetConnection
+    case invalidURL
+    case unknown(Error)
     
     public var errorDescription: String? {
         switch self {
-        case .invalidURL:
-            return "URL inválida"
-        case .noData:
-            return "Nenhum dado recebido"
-        case .invalidResponse:
-            return "Resposta inválida do servidor"
-        case .statusCode(let code, _):
-            return "Erro HTTP: \(code)"
-        case .decodingError(let error):
-            return "Erro ao decodificar dados: \(error.localizedDescription)"
-        case .encodingError(let error):
-            return "Erro ao codificar dados: \(error.localizedDescription)"
-        case .networkError(let error):
-            return "Erro de rede: \(error.localizedDescription)"
+        case .badRequest:
+            return String(localized: "error_bad_request", bundle: .module)
+        case .unauthorized:
+            return String(localized: "error_unauthorized", bundle: .module)
+        case .forbidden:
+            return String(localized: "error_forbidden", bundle: .module)
+        case .notFound:
+            return String(localized: "error_not_found", bundle: .module)
+        case .serverError:
+            return String(localized: "error_server_error", bundle: .module)
+        case .decodingFailed:
+            return String(localized: "error_decoding_failed", bundle: .module)
+        case .encodingFailed:
+            return String(localized: "error_encoding_failed", bundle: .module)
         case .timeout:
-            return "Timeout na requisição"
-        case .cancelled:
-            return "Requisição cancelada"
+            return String(localized: "error_timeout", bundle: .module)
+        case .noInternetConnection:
+            return String(localized: "error_no_internet", bundle: .module)
+        case .invalidURL:
+            return String(localized: "error_invalid_url", bundle: .module)
+        case .unknown(let error):
+            return String(localized: "error_unknown", bundle: .module) + ": \(error.localizedDescription)"
         }
     }
     
-    public var recoverySuggestion: String? {
-        switch self {
-        case .invalidURL:
-            return "Verifique se a URL está correta"
-        case .noData:
-            return "Tente novamente mais tarde"
-        case .invalidResponse:
-            return "Verifique a conexão e tente novamente"
-        case .statusCode(let code, _):
-            return statusCodeSuggestion(for: code)
-        case .decodingError:
-            return "Verifique se o modelo de dados está correto"
-        case .encodingError:
-            return "Verifique os dados sendo enviados"
-        case .networkError:
-            return "Verifique sua conexão com a internet"
-        case .timeout:
-            return "Verifique sua conexão e tente novamente"
-        case .cancelled:
-            return "A operação foi cancelada"
-        }
-    }
-    
-    private func statusCodeSuggestion(for code: Int) -> String {
-        switch code {
+    public static func from(httpStatusCode: Int) -> NetworkError {
+        switch httpStatusCode {
         case 400:
-            return "Requisição inválida - verifique os parâmetros"
+            return .badRequest
         case 401:
-            return "Não autorizado - faça login novamente"
+            return .unauthorized
         case 403:
-            return "Acesso negado - você não tem permissão"
+            return .forbidden
         case 404:
-            return "Recurso não encontrado"
-        case 429:
-            return "Muitas requisições - aguarde um momento"
+            return .notFound
         case 500...599:
-            return "Erro do servidor - tente novamente mais tarde"
+            return .serverError
         default:
-            return "Tente novamente mais tarde"
+            return .unknown(NSError(domain: "HTTPError", code: httpStatusCode, userInfo: nil))
+        }
+    }
+    
+    // MARK: - Equatable
+    public static func == (lhs: NetworkError, rhs: NetworkError) -> Bool {
+        switch (lhs, rhs) {
+        case (.badRequest, .badRequest),
+             (.unauthorized, .unauthorized),
+             (.forbidden, .forbidden),
+             (.notFound, .notFound),
+             (.serverError, .serverError),
+             (.decodingFailed, .decodingFailed),
+             (.encodingFailed, .encodingFailed),
+             (.timeout, .timeout),
+             (.noInternetConnection, .noInternetConnection),
+             (.invalidURL, .invalidURL):
+            return true
+        case (.unknown(let lhsError), .unknown(let rhsError)):
+            return lhsError.localizedDescription == rhsError.localizedDescription
+        default:
+            return false
         }
     }
 } 

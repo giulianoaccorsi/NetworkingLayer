@@ -5,6 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "NetworkingLayer",
+    defaultLocalization: "en",
     platforms: [
         .iOS(.v26),
         .macOS(.v26),
@@ -18,7 +19,10 @@ let package = Package(
     targets: [
         .target(
             name: "NetworkingLayer",
-            path: "Sources/NetworkingLayer"
+            path: "Sources/NetworkingLayer",
+            resources: [
+                .process("Resources")
+            ]
         )
     ]
 )
