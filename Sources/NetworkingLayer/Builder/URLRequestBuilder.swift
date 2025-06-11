@@ -68,20 +68,17 @@ public final class URLRequestBuilder: @unchecked Sendable {
         request.httpMethod = httpMethod.rawValue
         request.timeoutInterval = timeoutInterval
         request.cachePolicy = cachePolicy
-        
-        // Add headers
+    
         for header in httpHeaders {
             let (key, value) = header.keyValuePair
             request.setValue(value, forHTTPHeaderField: key)
         }
         
-        // Add authentication header if present
         if let authHeader = authentication.toHeader() {
             let (key, value) = authHeader.keyValuePair
             request.setValue(value, forHTTPHeaderField: key)
         }
         
-        // Add body
         do {
             request.httpBody = try httpBody.toData()
         } catch {
@@ -92,7 +89,6 @@ public final class URLRequestBuilder: @unchecked Sendable {
     }
 }
 
-// MARK: - Convenience methods for common patterns
 extension URLRequestBuilder {
     public static func get(_ path: String) -> URLRequestBuilder {
         return URLRequestBuilder().path(path).method(.get)

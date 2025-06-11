@@ -5,7 +5,6 @@ import PackageDescription
 
 let package = Package(
     name: "NetworkingLayer",
-    defaultLocalization: "en",
     platforms: [
         .iOS(.v26),
         .macOS(.v26),

@@ -4,7 +4,7 @@ public enum Authentication: Sendable {
     case none
     case bearer(String)
     case basic(username: String, password: String)
-    case apiKey(String, String) // key, value
+    case apiKey(String, String)
     
     public func toHeader() -> HTTPHeader? {
         switch self {

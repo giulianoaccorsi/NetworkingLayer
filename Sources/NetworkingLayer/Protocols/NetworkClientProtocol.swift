@@ -9,8 +9,4 @@ public protocol NetworkClientProtocol: Sendable {
     func request(
         endpoint: URLRequestBuilder
     ) async throws -> Data
-    
-    func request(
-        endpoint: URLRequestBuilder
-    ) async throws
 } 

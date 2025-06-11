@@ -1,6 +1,6 @@
 import Foundation
 
-public final class NetworkClient: NetworkClientProtocol {
+public actor NetworkClient: NetworkClientProtocol {
     private let urlSession: URLSession
     private let jsonDecoder: JSONDecoder
     
@@ -10,13 +10,9 @@ public final class NetworkClient: NetworkClientProtocol {
     ) {
         self.urlSession = urlSession
         self.jsonDecoder = jsonDecoder
-        
-        // Configure JSON decoder with common settings
         self.jsonDecoder.dateDecodingStrategy = .iso8601
         self.jsonDecoder.keyDecodingStrategy = .convertFromSnakeCase
     }
-    
-    // MARK: - NetworkClientProtocol Implementation
     
     public func request<T: Codable & Sendable>(
         endpoint: URLRequestBuilder,
@@ -43,7 +39,6 @@ public final class NetworkClient: NetworkClientProtocol {
                 throw NetworkError.unknown(NSError(domain: "InvalidResponse", code: 0, userInfo: nil))
             }
             
-            // Check for HTTP errors
             if !(200...299).contains(httpResponse.statusCode) {
                 throw NetworkError.from(httpStatusCode: httpResponse.statusCode)
             }
@@ -53,7 +48,6 @@ public final class NetworkClient: NetworkClientProtocol {
         } catch let error as NetworkError {
             throw error
         } catch {
-            // Handle specific URLSession errors
             if let urlError = error as? URLError {
                 switch urlError.code {
                 case .timedOut:
@@ -68,15 +62,8 @@ public final class NetworkClient: NetworkClientProtocol {
             throw NetworkError.unknown(error)
         }
     }
-    
-    public func request(
-        endpoint: URLRequestBuilder
-    ) async throws {
-        let _: Data = try await request(endpoint: endpoint)
-    }
 }
 
-// MARK: - Convenience methods
 extension NetworkClient {
     public func request<T: Codable & Sendable>(
         endpoint: URLRequestBuilder,

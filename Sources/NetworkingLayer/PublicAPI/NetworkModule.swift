@@ -1,10 +1,5 @@
 import Foundation
 
-// MARK: - Public API Re-exports
-// All the types are already public, so they'll be available when importing NetworkingLayer
-
-// MARK: - Convenience Factory
-
 public struct NetworkModule: Sendable {
     public static func createClient(
         urlSession: URLSession = .shared,
@@ -17,8 +12,6 @@ public struct NetworkModule: Sendable {
         return NetworkClient()
     }
 }
-
-// MARK: - Global Convenience Functions
 
 public func createRequest() -> URLRequestBuilder {
     return URLRequestBuilder()
