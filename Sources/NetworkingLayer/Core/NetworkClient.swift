@@ -1,6 +1,6 @@
 import Foundation
 
-public class NetworkClient: NetworkClientProtocol {
+public final class NetworkClient: NetworkClientProtocol {
     private let urlSession: URLSession
     private let jsonDecoder: JSONDecoder
     
@@ -18,7 +18,7 @@ public class NetworkClient: NetworkClientProtocol {
     
     // MARK: - NetworkClientProtocol Implementation
     
-    public func request<T: Codable>(
+    public func request<T: Codable & Sendable>(
         endpoint: URLRequestBuilder,
         responseType: T.Type
     ) async throws -> T {
@@ -78,7 +78,7 @@ public class NetworkClient: NetworkClientProtocol {
 
 // MARK: - Convenience methods
 extension NetworkClient {
-    public func request<T: Codable>(
+    public func request<T: Codable & Sendable>(
         endpoint: URLRequestBuilder,
         responseType: T.Type,
         decoder: JSONDecoder

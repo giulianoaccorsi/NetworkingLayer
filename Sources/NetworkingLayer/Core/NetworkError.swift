@@ -1,6 +1,6 @@
 import Foundation
 
-public enum NetworkError: LocalizedError, Equatable {
+public enum NetworkError: LocalizedError, Equatable, Sendable {
     case badRequest
     case unauthorized
     case forbidden

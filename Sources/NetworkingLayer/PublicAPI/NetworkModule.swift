@@ -5,7 +5,7 @@ import Foundation
 
 // MARK: - Convenience Factory
 
-public struct NetworkModule {
+public struct NetworkModule: Sendable {
     public static func createClient(
         urlSession: URLSession = .shared,
         jsonDecoder: JSONDecoder = JSONDecoder()

@@ -1,6 +1,6 @@
 import Foundation
 
-public enum HTTPHeader {
+public enum HTTPHeader: Sendable {
     case json
     case xml
     case formURLEncoded

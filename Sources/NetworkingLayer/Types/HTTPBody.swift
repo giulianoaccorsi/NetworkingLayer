@@ -1,10 +1,10 @@
 import Foundation
 
-public enum HTTPBody {
+public enum HTTPBody: Sendable {
     case none
     case raw(Data)
-    case json(Codable)
-    case custom([String: Any])
+    case json(any Codable & Sendable)
+    case custom([String: any Sendable])
     case string(String)
     
     public func toData() throws -> Data? {
@@ -16,7 +16,7 @@ public enum HTTPBody {
         case .json(let codable):
             return try JSONEncoder().encode(codable)
         case .custom(let dictionary):
-            return try JSONSerialization.data(withJSONObject: dictionary)
+            return try JSONSerialization.data(withJSONObject: dictionary as [String: Any])
         case .string(let string):
             return string.data(using: .utf8)
         }

@@ -1,6 +1,6 @@
 import Foundation
 
-public class URLRequestBuilder {
+public final class URLRequestBuilder: @unchecked Sendable {
     private var urlString: String = ""
     private var httpMethod: HTTPMethod = .get
     private var httpHeaders: [HTTPHeader] = []

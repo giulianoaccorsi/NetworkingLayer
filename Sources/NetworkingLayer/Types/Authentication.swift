@@ -1,6 +1,6 @@
 import Foundation
 
-public enum Authentication {
+public enum Authentication: Sendable {
     case none
     case bearer(String)
     case basic(username: String, password: String)
