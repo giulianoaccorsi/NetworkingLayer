@@ -1,390 +1,295 @@
-# NetworkingLayer
+# 🌐 NetworkModule
 
-A modern, type-safe networking layer for Swift with multiple builder patterns, comprehensive error handling, and powerful retry mechanisms.
+Um módulo moderno, abstrato e independente de rede para Swift com async/await (iOS 18+).
 
-[![Swift Version](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://swift.org)
-[![Platforms](https://img.shields.io/badge/Platforms-iOS%2015%2B%20|%20macOS%2012%2B%20|%20tvOS%2015%2B%20|%20watchOS%208%2B-blue.svg)](https://swift.org)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+## ✨ Características
 
-## ✨ Features
+- 🚀 **Moderno**: Utiliza async/await e está otimizado para iOS 18+
+- 🛡️ **Type-Safe**: Tipagem forte com protocolos e genéricos
+- 🧱 **Modular**: Estrutura bem organizada e fácil de entender
+- 🔌 **Plugável**: Interface baseada em protocolos, totalmente mockável
+- 🎯 **Independente**: Sem dependências externas, apenas URLSession
+- 🧪 **Testável**: Mock client incluído para testes
 
-- 🏗️ **Multiple Builder Patterns** - Choose the style that fits your needs
-- 🔄 **Intelligent Retry Policies** - Exponential backoff, linear retry, or custom strategies
-- ❌ **Comprehensive Error Handling** - Localized error messages with recovery suggestions
-- 🛡️ **Type Safety** - Protocol-based design with compile-time guarantees
-- 📝 **Extensive Logging** - Configurable network request/response logging
-- ⚡ **Swift 6 Ready** - Full concurrency support with async/await
-- 🧪 **Thoroughly Tested** - Comprehensive test suite with 100% coverage
-- 📱 **Cross-Platform** - iOS, macOS, tvOS, and watchOS support
+## 📁 Estrutura do Módulo
 
-## 🚀 Quick Start
+```
+NetworkingLayer/
+├── Core/
+│   ├── NetworkClient.swift           // ✅ Implementação genérica
+│   └── NetworkError.swift            // ✅ Erros tipados
+├── Protocols/
+│   ├── NetworkClientProtocol.swift   // ✅ Interface pública
+│   └── EndpointProtocol.swift        // ✅ Como definir endpoints
+├── Configuration/
+│   └── NetworkConfiguration.swift    // ✅ Configuração injetável
+├── Helpers/
+│   └── HTTPMethod.swift              // ✅ Métodos HTTP
+└── PublicAPI/
+    └── NetworkModule.swift           // ✅ Ponto de entrada público
+```
 
-### Installation
+## 🚀 Instalação
 
-Add NetworkingLayer to your project using Swift Package Manager:
+Adicione ao seu `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/yourusername/NetworkingLayer.git", from: "1.0.0")
+    .package(url: "https://github.com/seu-usuario/NetworkModule.git", from: "1.0.0")
 ]
 ```
 
-### Basic Usage
+## 📖 Como Usar
+
+### 1. Cliente Básico
 
 ```swift
 import NetworkingLayer
 
-// Create a service
-let service = DefaultNetworkService()
+// Criar cliente simples
+let client = NetworkModule.createClient(baseURL: "https://api.exemplo.com")
 
-// Define a request
-struct GetPostsRequest: DataRequestProtocol {
-    typealias Response = [Post]
-    
-    let domain = "https://jsonplaceholder.typicode.com"
-    let path = "/posts"
-    let method = HTTPMethod.get
-}
-
-// Make the request
-let posts = try await service.request(GetPostsRequest())
-```
-
-## 🏗️ Builder Patterns
-
-NetworkingLayer offers four different builder patterns to suit different coding styles and use cases:
-
-### 1. DataRequestProtocol (Recommended)
-
-**Best for:** Type-safe, reusable request definitions
-
-```swift
-struct CreatePostRequest: DataRequestProtocol {
-    typealias Response = Post
-    
-    let postData: CreatePostData
-    
-    let domain = "https://api.example.com"
-    let path = "/posts"
-    let method = HTTPMethod.post
-    
-    var headers: [String: String] {
-        ["Content-Type": "application/json"]
-    }
-    
-    var body: Data? {
-        try? JSONEncoder().encode(postData)
-    }
-}
-
-// Usage
-let postData = CreatePostData(title: "Hello", body: "World", userId: 1)
-let post = try await service.request(CreatePostRequest(postData: postData))
-```
-
-### 2. URLRequestBuilder
-
-**Best for:** Imperative, step-by-step request building
-
-```swift
-let request = try URLRequestBuilder
-    .post("https://api.example.com/posts")
-    .contentType("application/json")
-    .bearerToken("your-token")
-    .jsonBody(postData)
-    .timeout(30)
-    .build()
-
-let (data, _) = try await URLSession.shared.data(for: request)
-```
-
-**Available Methods:**
-- `.get()`, `.post()`, `.put()`, `.patch()`, `.delete()`
-- `.header(key, value)`, `.headers([String: String])`
-- `.query(key, value)`, `.queryItems([String: String])`
-- `.bearerToken(token)`, `.basicAuth(username, password)`
-- `.jsonBody(object)`, `.formBody(params)`, `.body(data)`
-- `.timeout(interval)`, `.cachePolicy(policy)`
-
-### 3. RequestConfigurator
-
-**Best for:** Functional programming style with immutable fluent API
-
-```swift
-let request = try RequestConfigurator(
-    url: URL(string: "https://api.example.com/posts")!,
-    method: .post
-)
-.headers([
-    "Content-Type": "application/json",
-    "Accept": "application/json"
-])
-.bearerToken("your-token")
-.jsonBody(postData)
-.timeout(30)
-.build()
-```
-
-### 4. @resultBuilder (DSL)
-
-**Best for:** Declarative, SwiftUI-like syntax
-
-```swift
-let request = URLRequest(
-    url: URL(string: "https://api.example.com/posts")!,
-    method: .post
-) {
-    contentType("application/json")
-    accept("application/json")
-    bearerToken("your-token")
-    jsonBody(postData)
-    timeout(30)
-    
-    if needsAuthentication {
-        header("X-Auth-Required", "true")
-    }
-}
-```
-
-## 🔄 Retry Strategies
-
-NetworkingLayer includes intelligent retry mechanisms:
-
-### No Retry
-```swift
-let service = NetworkServiceWithRetry.withoutRetry()
-```
-
-### Linear Retry
-```swift
-let service = NetworkServiceWithRetry.withLinearRetry(
-    maxRetries: 3,
-    delay: 1.0
+// Usar métodos de conveniência
+let users: [User] = try await client.get(
+    path: "/users",
+    responseType: [User].self
 )
 ```
 
-### Exponential Backoff (Recommended)
-```swift
-let service = NetworkServiceWithRetry.withExponentialBackoff(
-    maxRetries: 3,
-    baseDelay: 1.0,
-    maxDelay: 30.0
-)
-```
+### 2. Endpoints Estruturados (Recomendado)
 
-### Custom Retry Policy
 ```swift
-struct CustomRetryPolicy: RetryPolicy {
-    let maxRetries = 5
+// Definir seus endpoints
+struct GetUsersEndpoint: SimpleGetEndpoint {
+    let path = "/users"
+}
+
+struct CreateUserEndpoint: PostEndpoint {
+    typealias Body = CreateUserRequest
     
-    func shouldRetry(for error: Error, attempt: Int) -> Bool {
-        // Custom retry logic
-        return attempt < maxRetries && isRetryableError(error)
+    let path = "/users"
+    let requestBody: CreateUserRequest
+    
+    init(name: String, email: String) {
+        self.requestBody = CreateUserRequest(name: name, email: email)
+    }
+}
+
+// Usar nos seus services
+final class UserService {
+    private let client: NetworkClientProtocol
+    
+    init(client: NetworkClientProtocol) {
+        self.client = client
     }
     
-    func delay(for attempt: Int) -> TimeInterval {
-        // Custom delay calculation
-        return TimeInterval(attempt * 2)
+    func getUsers() async throws -> [User] {
+        return try await client.request(
+            endpoint: GetUsersEndpoint(),
+            responseType: [User].self
+        )
+    }
+    
+    func createUser(name: String, email: String) async throws -> User {
+        return try await client.request(
+            endpoint: CreateUserEndpoint(name: name, email: email),
+            responseType: User.self
+        )
     }
 }
 ```
 
-## ❌ Error Handling
+### 3. Cliente com Autenticação
 
-Comprehensive error handling with localized messages:
+```swift
+let client = NetworkModule.createAPIClient(
+    baseURL: "https://api.exemplo.com",
+    bearerToken: "seu-token-aqui"
+)
+
+// Ou com API Key
+let client = NetworkModule.createAPIClient(
+    baseURL: "https://api.exemplo.com",
+    apiKey: "sua-api-key"
+)
+```
+
+### 4. Configuração Personalizada
+
+```swift
+let configuration = NetworkConfiguration(
+    baseURL: "https://api.exemplo.com",
+    defaultHeaders: [
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "User-Agent": "MeuApp/1.0"
+    ],
+    timeoutInterval: 60.0,
+    allowsCellularAccess: true
+)
+
+let client = NetworkModule.createClient(configuration: configuration)
+```
+
+### 5. Decodificadores Personalizados
+
+```swift
+let decoder = JSONDecoder()
+decoder.keyDecodingStrategy = .convertFromSnakeCase
+decoder.dateDecodingStrategy = .iso8601
+
+let client = NetworkModule.createClient(
+    configuration: configuration,
+    decoder: decoder,
+    encoder: JSONEncoder()
+)
+```
+
+## 🧪 Testes com Mock
+
+```swift
+#if DEBUG
+let mockClient = NetworkModule.createMockClient() as! MockNetworkClient
+
+// Configurar dados mock
+let mockUsers = [User(id: 1, name: "João", email: "joao@exemplo.com")]
+try mockClient.setMockData(mockUsers)
+mockClient.requestDelay = 0.5 // Simular delay
+
+let userService = UserService(client: mockClient)
+let users = try await userService.getUsers()
+#endif
+```
+
+## 🎯 Protocolos de Conveniência
+
+### Para GET simples:
+```swift
+struct GetUsersEndpoint: SimpleGetEndpoint {
+    let path = "/users"
+}
+```
+
+### Para POST com body:
+```swift
+struct CreateUserEndpoint: PostEndpoint {
+    typealias Body = CreateUserRequest
+    let path = "/users"
+    let requestBody: CreateUserRequest
+}
+```
+
+### Para PUT com body:
+```swift
+struct UpdateUserEndpoint: PutEndpoint {
+    typealias Body = UpdateUserRequest
+    let path = "/users/123"
+    let requestBody: UpdateUserRequest
+}
+```
+
+### Para DELETE:
+```swift
+struct DeleteUserEndpoint: DeleteEndpoint {
+    let path = "/users/123"
+}
+```
+
+## ❗ Tratamento de Erros
 
 ```swift
 do {
-    let posts = try await service.request(GetPostsRequest())
-} catch let error as ServiceError {
-    switch error {
-    case .invalidStatusCode(let code):
-        print("HTTP Error \(code): \(error.localizedDescription)")
-        print("Recovery: \(error.recoverySuggestion ?? "")")
-        
-    case .networkError(let underlying):
-        print("Network Error: \(underlying.localizedDescription)")
-        
-    case .decodingError(let underlying):
-        print("Parsing Error: \(underlying.localizedDescription)")
-        
-    default:
-        print("Error: \(error.localizedDescription)")
-    }
+    let users = try await userService.getUsers()
+} catch NetworkError.statusCode(let code, _) {
+    print("Erro HTTP: \(code)")
+} catch NetworkError.decodingError(let error) {
+    print("Erro de decodificação: \(error)")
+} catch NetworkError.networkError(let error) {
+    print("Erro de rede: \(error)")
+} catch NetworkError.timeout {
+    print("Timeout na requisição")
+} catch {
+    print("Erro: \(error.localizedDescription)")
 }
 ```
 
-## 📝 Logging
-
-Configurable network logging for debugging:
+## 🔧 Exemplo Completo de Integração
 
 ```swift
-// Enable detailed logging
-let logger = NetworkLogger(isEnabled: true)
-let service = DefaultNetworkService(logger: logger)
+// Seus modelos
+struct User: Codable, Sendable {
+    let id: Int
+    let name: String
+    let email: String
+}
 
-// Silent logging for production
-let silentLogger = SilentNetworkLogger()
-let service = DefaultNetworkService(logger: silentLogger)
-```
+// Seus endpoints
+struct GetUsersEndpoint: SimpleGetEndpoint {
+    let path = "/users"
+}
 
-## 🛡️ Response Validation
-
-Flexible response validation:
-
-```swift
-// JSON validation
-let validator = JSONResponseValidator()
-
-// Custom status codes
-let validator = CustomStatusCodeValidator(acceptableStatusCodes: [200, 201, 204])
-
-// Content type validation
-let validator = DefaultResponseValidator(
-    acceptableStatusCodes: 200..<300,
-    acceptableContentTypes: ["application/json"]
-)
-
-// Composite validation
-let validator = CompositeResponseValidator([
-    JSONResponseValidator(),
-    CustomStatusCodeValidator(acceptableStatusCodes: [200, 201])
-])
-```
-
-## 🧪 Testing
-
-NetworkingLayer includes comprehensive testing utilities:
-
-```swift
-// Mock network service for testing
-class MockNetworkService: NetworkService {
-    var mockResponse: Any?
-    var mockError: Error?
+// Seu service
+final class UserService {
+    private let client: NetworkClientProtocol
     
-    func request<Request: DataRequestProtocol>(
-        _ request: Request
-    ) async throws -> Request.Response {
-        if let error = mockError {
-            throw error
-        }
-        return mockResponse as! Request.Response
+    init(client: NetworkClientProtocol) {
+        self.client = client
     }
+    
+    func getUsers() async throws -> [User] {
+        try await client.request(
+            endpoint: GetUsersEndpoint(),
+            responseType: [User].self
+        )
+    }
+}
+
+// Configuração no app
+class AppContainer {
+    lazy var networkClient: NetworkClientProtocol = {
+        NetworkModule.createAPIClient(
+            baseURL: "https://api.exemplo.com",
+            bearerToken: AuthManager.shared.token
+        )
+    }()
+    
+    lazy var userService = UserService(client: networkClient)
 }
 ```
 
-## 📱 Advanced Examples
+## 🎛️ Factory Methods Disponíveis
 
-### Pagination
 ```swift
-struct PostsWithPaginationRequest: DataRequestProtocol {
-    typealias Response = [Post]
-    
-    let page: Int
-    let limit: Int
-    
-    let domain = "https://jsonplaceholder.typicode.com"
-    let path = "/posts"
-    let method = HTTPMethod.get
-    
-    var queryItems: [String: String] {
-        [
-            "_page": String(page),
-            "_limit": String(limit)
-        ]
-    }
-}
+// Cliente básico
+NetworkModule.createClient(baseURL: "https://api.exemplo.com")
+
+// Cliente com autenticação
+NetworkModule.createAPIClient(baseURL: "https://api.exemplo.com", bearerToken: "token")
+
+// Cliente para debug
+NetworkModule.createDebugClient(baseURL: "https://api.exemplo.com")
+
+// Cliente com configuração personalizada
+NetworkModule.createClient(configuration: customConfig)
+
+// Cliente mock para testes
+NetworkModule.createMockClient() // Apenas em DEBUG
 ```
 
-### File Upload
-```swift
-let uploadRequest = try URLRequestBuilder
-    .post("https://api.example.com/upload")
-    .bearerToken("your-token")
-    .body(imageData)
-    .header("Content-Type", "image/jpeg")
-    .build()
-```
-
-### Custom Headers & Authentication
-```swift
-struct AuthenticatedRequest: DataRequestProtocol {
-    typealias Response = UserProfile
-    
-    let domain = "https://api.example.com"
-    let path = "/profile"
-    let method = HTTPMethod.get
-    
-    var headers: [String: String] {
-        [
-            "Authorization": "Bearer \(AuthManager.shared.token)",
-            "Accept": "application/json",
-            "User-Agent": "MyApp/1.0",
-            "X-API-Version": "v2"
-        ]
-    }
-}
-```
-
-## 🔧 Configuration
-
-### Network Configuration
-```swift
-let config = NetworkConfiguration(
-    baseURL: "https://api.example.com",
-    defaultHeaders: [
-        "Accept": "application/json",
-        "Content-Type": "application/json"
-    ],
-    timeoutInterval: 30.0,
-    cachePolicy: .useProtocolCachePolicy
-)
-```
-
-### Custom Decoders
-```swift
-struct CustomRequest: DataRequestProtocol {
-    typealias Response = [Post]
-    
-    var decoder: JSONDecoder {
-        let decoder = JSONDecoder()
-        decoder.keyDecodingStrategy = .convertFromSnakeCase
-        decoder.dateDecodingStrategy = .iso8601
-        return decoder
-    }
-    
-    // ... other properties
-}
-```
-
-## 🎯 Best Practices
-
-1. **Use DataRequestProtocol** for reusable, type-safe requests
-2. **Implement retry policies** for production applications
-3. **Handle errors appropriately** with proper user feedback
-4. **Use silent logging** in production builds
-5. **Validate responses** based on your API requirements
-6. **Test network code** using dependency injection
-7. **Configure timeouts** appropriately for your use case
-
-## 📋 Requirements
+## 📋 Requisitos
 
 - iOS 15.0+ / macOS 12.0+ / tvOS 15.0+ / watchOS 8.0+
-- Swift 6.0+
-- Xcode 16.0+
+- Swift 5.9+
+- Xcode 15.0+
 
-## 🤝 Contributing
+## 🎯 Casos de Uso Ideais
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+- ✅ APIs REST modernas
+- ✅ Projetos com múltiplos módulos/features
+- ✅ Apps que precisam de flexibilidade na configuração de rede
+- ✅ Projetos que valorizam testabilidade
+- ✅ Integração com SwiftUI e UIKit
 
-## 📄 License
+## 📄 Licença
 
-NetworkingLayer is available under the MIT license. See the LICENSE file for more info.
-
-## 🙏 Acknowledgments
-
-- Built with ❤️ using modern Swift concurrency
-- Inspired by the best practices from the Swift community
-- Designed for real-world iOS applications
-
----
+MIT License. Veja o arquivo LICENSE para detalhes.

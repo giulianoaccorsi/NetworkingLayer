@@ -1,14 +1,13 @@
-// swift-tools-version: 6.0
+// swift-tools-version: 6.2
+// The swift-tools-version declares the minimum version of Swift required to build this package.
 
 import PackageDescription
 
 let package = Package(
     name: "NetworkingLayer",
     platforms: [
-        .iOS(.v15),
-        .macOS(.v12),
-        .tvOS(.v15),
-        .watchOS(.v8)
+        .iOS(.v26),
+        .macOS(.v26),
     ],
     products: [
         .library(
@@ -16,21 +15,10 @@ let package = Package(
             targets: ["NetworkingLayer"]
         )
     ],
-    dependencies: [
-        // Add dependencies here if needed in the future
-    ],
     targets: [
         .target(
             name: "NetworkingLayer",
-            path: "Sources/NetworkingLayer",
-            resources: [
-                .process("Resources")
-            ]
-        ),
-        .testTarget(
-            name: "NetworkingLayerTests",
-            dependencies: ["NetworkingLayer"],
-            path: "Tests/NetworkingLayerTests"
-        ),
+            path: "Sources/NetworkingLayer"
+        )
     ]
 )
