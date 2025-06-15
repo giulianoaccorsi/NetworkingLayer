@@ -1,6 +1,6 @@
 import Foundation
 
-public enum NetworkError: LocalizedError, Equatable, Sendable {
+public enum NetworkError: LocalizedError, Equatable, Sendable, Hashable {
     case badRequest
     case unauthorized
     case forbidden
@@ -91,5 +91,36 @@ public enum NetworkError: LocalizedError, Equatable, Sendable {
             return false
         }
     }
+    
+    // MARK: - Hashable
+    public func hash(into hasher: inout Hasher) {
+        switch self {
+        case .badRequest:
+            hasher.combine(0)
+        case .unauthorized:
+            hasher.combine(1)
+        case .forbidden:
+            hasher.combine(2)
+        case .notFound:
+            hasher.combine(3)
+        case .serverError:
+            hasher.combine(4)
+        case .decodingFailed:
+            hasher.combine(5)
+        case .encodingFailed:
+            hasher.combine(6)
+        case .timeout:
+            hasher.combine(7)
+        case .noInternetConnection:
+            hasher.combine(8)
+        case .invalidURL:
+            hasher.combine(9)
+        case .unknown(let error):
+            hasher.combine(10)
+            hasher.combine(error.localizedDescription)
+        case .custom(let statusCode, _):
+            hasher.combine(11)
+            hasher.combine(statusCode)
+        }
+    }
 }
-
