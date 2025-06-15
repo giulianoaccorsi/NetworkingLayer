@@ -40,7 +40,10 @@ public actor NetworkClient: NetworkClientProtocol {
             }
             
             if !(200...299).contains(httpResponse.statusCode) {
-                throw NetworkError.from(httpStatusCode: httpResponse.statusCode)
+                throw NetworkError.from(
+                    httpStatusCode: httpResponse.statusCode,
+                    data: data
+                )
             }
             
             return data

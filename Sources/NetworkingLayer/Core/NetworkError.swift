@@ -12,6 +12,7 @@ public enum NetworkError: LocalizedError, Equatable, Sendable {
     case noInternetConnection
     case invalidURL
     case unknown(Error)
+    case custom(statusCode: Int, data: Data? = nil)
     
     public var errorDescription: String? {
         switch self {
@@ -37,39 +38,52 @@ public enum NetworkError: LocalizedError, Equatable, Sendable {
             return String(localized: "error_invalid_url", bundle: .module)
         case .unknown(let error):
             return String(localized: "error_unknown", bundle: .module) + ": \(error.localizedDescription)"
+        case .custom(statusCode: let statusCode, _):
+            return "HTTP error with status code: \(statusCode)"
         }
     }
     
-    public static func from(httpStatusCode: Int) -> NetworkError {
-        switch httpStatusCode {
-        case 400:
-            return .badRequest
-        case 401:
-            return .unauthorized
-        case 403:
-            return .forbidden
-        case 404:
-            return .notFound
-        case 500...599:
-            return .serverError
-        default:
-            return .unknown(NSError(domain: "HTTPError", code: httpStatusCode, userInfo: nil))
+    public static func from(httpStatusCode: Int, data: Data?) -> NetworkError {
+        if data == nil {
+            switch httpStatusCode {
+            case 400:
+                return .badRequest
+            case 401:
+                return .unauthorized
+            case 403:
+                return .forbidden
+            case 404:
+                return .notFound
+            case 500...599:
+                return .serverError
+            default:
+                return .unknown(
+                    NSError(
+                        domain: "HTTPError",
+                        code: httpStatusCode,
+                        userInfo: nil
+                    )
+                )
+            }
         }
+        
+        return .custom(statusCode: httpStatusCode, data: data)
     }
     
     // MARK: - Equatable
     public static func == (lhs: NetworkError, rhs: NetworkError) -> Bool {
         switch (lhs, rhs) {
         case (.badRequest, .badRequest),
-             (.unauthorized, .unauthorized),
-             (.forbidden, .forbidden),
-             (.notFound, .notFound),
-             (.serverError, .serverError),
-             (.decodingFailed, .decodingFailed),
-             (.encodingFailed, .encodingFailed),
-             (.timeout, .timeout),
-             (.noInternetConnection, .noInternetConnection),
-             (.invalidURL, .invalidURL):
+            (.unauthorized, .unauthorized),
+            (.forbidden, .forbidden),
+            (.notFound, .notFound),
+            (.serverError, .serverError),
+            (.decodingFailed, .decodingFailed),
+            (.encodingFailed, .encodingFailed),
+            (.timeout, .timeout),
+            (.noInternetConnection, .noInternetConnection),
+            (.invalidURL, .invalidURL),
+            (.custom, .custom):
             return true
         case (.unknown(let lhsError), .unknown(let rhsError)):
             return lhsError.localizedDescription == rhsError.localizedDescription
@@ -77,4 +91,5 @@ public enum NetworkError: LocalizedError, Equatable, Sendable {
             return false
         }
     }
-} 
+}
+
