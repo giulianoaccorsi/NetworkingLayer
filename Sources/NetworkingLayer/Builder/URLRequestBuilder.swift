@@ -109,4 +109,43 @@ extension URLRequestBuilder {
     public static func patch(_ path: String) -> URLRequestBuilder {
         return URLRequestBuilder().path(path).method(.patch)
     }
+}
+
+// MARK: - CustomDebugStringConvertible
+extension URLRequestBuilder: CustomDebugStringConvertible {
+    public var debugDescription: String {
+        var description = """
+        🔧 URLRequestBuilder:
+        🌐 URL: \(urlString.isEmpty ? "Not set" : urlString)
+        📝 Method: \(httpMethod.rawValue)
+        """
+        
+        if !httpHeaders.isEmpty {
+            let headersString = httpHeaders.map { "    \($0.key): \($0.value)" }.joined(separator: "\n")
+            description += "\n📋 Headers:\n\(headersString)"
+        }
+        
+        switch httpBody {
+        case .none:
+            description += "\n📦 Body: None"
+        case .raw(let data):
+            description += "\n📦 Body: Raw data (\(data.count) bytes)"
+        case .json:
+            description += "\n📦 Body: JSON object"
+        case .custom(let dict):
+            description += "\n📦 Body: Custom dictionary (\(dict.count) keys)"
+        case .string(let string):
+            description += "\n📦 Body: String (\(string.count) chars)"
+        }
+        
+        if authentication != .none {
+            description += "\n🔒 Authentication: \(authentication.debugDescription)"
+        }
+        
+        if timeoutInterval != 60.0 {
+            description += "\n⏱️ Timeout: \(timeoutInterval)s"
+        }
+        
+        return description
+    }
 } 

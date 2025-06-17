@@ -124,3 +124,36 @@ public enum NetworkError: LocalizedError, Equatable, Sendable, Hashable {
         }
     }
 }
+
+// MARK: - CustomDebugStringConvertible
+extension NetworkError: CustomDebugStringConvertible {
+    public var debugDescription: String {
+        switch self {
+        case .badRequest:
+            return "🔴 Bad Request (400)"
+        case .unauthorized:
+            return "🔒 Unauthorized (401)"
+        case .forbidden:
+            return "🚫 Forbidden (403)"
+        case .notFound:
+            return "🔍 Not Found (404)"
+        case .serverError:
+            return "💥 Server Error (5xx)"
+        case .decodingFailed:
+            return "📦 JSON Decoding Failed"
+        case .encodingFailed:
+            return "📝 JSON Encoding Failed"
+        case .timeout:
+            return "⏰ Request Timeout"
+        case .noInternetConnection:
+            return "📶 No Internet Connection"
+        case .invalidURL:
+            return "🔗 Invalid URL"
+        case .unknown(let error):
+            return "❓ Unknown Error: \(error)"
+        case .custom(let statusCode, let data):
+            let dataInfo = data != nil ? " with \(data!.count) bytes" : ""
+            return "🔧 Custom Error (HTTP \(statusCode))\(dataInfo)"
+        }
+    }
+}

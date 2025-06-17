@@ -3,13 +3,22 @@ import Foundation
 public struct NetworkModule: Sendable {
     public static func createClient(
         urlSession: URLSession = .shared,
-        jsonDecoder: JSONDecoder = JSONDecoder()
+        jsonDecoder: JSONDecoder = JSONDecoder(),
+        loggingConfig: NetworkLoggingConfig = NetworkLoggingConfig()
     ) -> NetworkClientProtocol {
-        return NetworkClient(urlSession: urlSession, jsonDecoder: jsonDecoder)
+        return NetworkClient(
+            urlSession: urlSession, 
+            jsonDecoder: jsonDecoder,
+            loggingConfig: loggingConfig
+        )
     }
     
     public static var defaultClient: NetworkClientProtocol {
         return NetworkClient()
+    }
+    
+    public static var debugClient: NetworkClientProtocol {
+        return NetworkClient(loggingConfig: NetworkLoggingConfig(isEnabled: true, logLevel: .debug))
     }
 }
 

@@ -3,15 +3,23 @@ import Foundation
 public actor NetworkClient: NetworkClientProtocol {
     private let urlSession: URLSession
     private let jsonDecoder: JSONDecoder
+    private let loggingConfig: NetworkLoggingConfig
     
     public init(
         urlSession: URLSession = .shared,
-        jsonDecoder: JSONDecoder = JSONDecoder()
+        jsonDecoder: JSONDecoder = JSONDecoder(),
+        loggingConfig: NetworkLoggingConfig = NetworkLoggingConfig()
     ) {
         self.urlSession = urlSession
         self.jsonDecoder = jsonDecoder
+        self.loggingConfig = loggingConfig
+        
         self.jsonDecoder.dateDecodingStrategy = .iso8601
         self.jsonDecoder.keyDecodingStrategy = .convertFromSnakeCase
+        
+        if loggingConfig.isEnabled {
+            NetworkLogger.shared.logConfiguration("NetworkClient initialized with logging enabled")
+        }
     }
     
     public func request<T: Codable & Sendable>(
@@ -31,38 +39,71 @@ public actor NetworkClient: NetworkClientProtocol {
         endpoint: URLRequestBuilder
     ) async throws -> Data {
         let urlRequest = try endpoint.build()
+        let startTime = CFAbsoluteTimeGetCurrent()
+        
+        // Log request
+        if loggingConfig.isEnabled {
+            NetworkLogger.shared.logRequest(urlRequest)
+        }
         
         do {
             let (data, response) = try await urlSession.data(for: urlRequest)
+            let duration = CFAbsoluteTimeGetCurrent() - startTime
             
             guard let httpResponse = response as? HTTPURLResponse else {
-                throw NetworkError.unknown(NSError(domain: "InvalidResponse", code: 0, userInfo: nil))
+                let error = NetworkError.unknown(NSError(domain: "InvalidResponse", code: 0, userInfo: nil))
+                if loggingConfig.isEnabled {
+                    NetworkLogger.shared.logError(error, for: urlRequest, duration: duration)
+                }
+                throw error
+            }
+            
+            // Log response
+            if loggingConfig.isEnabled {
+                NetworkLogger.shared.logResponse(httpResponse, data: data, duration: duration)
             }
             
             if !(200...299).contains(httpResponse.statusCode) {
-                throw NetworkError.from(
+                let error = NetworkError.from(
                     httpStatusCode: httpResponse.statusCode,
                     data: data
                 )
+                if loggingConfig.isEnabled {
+                    NetworkLogger.shared.logError(error, for: urlRequest, duration: duration)
+                }
+                throw error
             }
             
             return data
             
         } catch let error as NetworkError {
+            let duration = CFAbsoluteTimeGetCurrent() - startTime
+            if loggingConfig.isEnabled {
+                NetworkLogger.shared.logError(error, for: urlRequest, duration: duration)
+            }
             throw error
         } catch {
+            let duration = CFAbsoluteTimeGetCurrent() - startTime
+            let networkError: NetworkError
+            
             if let urlError = error as? URLError {
                 switch urlError.code {
                 case .timedOut:
-                    throw NetworkError.timeout
+                    networkError = .timeout
                 case .notConnectedToInternet, .networkConnectionLost:
-                    throw NetworkError.noInternetConnection
+                    networkError = .noInternetConnection
                 default:
-                    throw NetworkError.unknown(urlError)
+                    networkError = .unknown(urlError)
                 }
+            } else {
+                networkError = .unknown(error)
             }
             
-            throw NetworkError.unknown(error)
+            if loggingConfig.isEnabled {
+                NetworkLogger.shared.logError(networkError, for: urlRequest, duration: duration)
+            }
+            
+            throw networkError
         }
     }
 }
