@@ -31,6 +31,9 @@ public actor NetworkClient: NetworkClientProtocol {
         do {
             return try jsonDecoder.decode(responseType, from: data)
         } catch {
+            if loggingConfig.isEnabled {
+                NetworkLogger.shared.logError(error, for: try endpoint.build())
+            }
             throw NetworkError.decodingFailed
         }
     }
