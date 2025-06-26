@@ -26,13 +26,21 @@ public actor NetworkClient: NetworkClientProtocol {
         endpoint: URLRequestBuilder,
         responseType: T.Type
     ) async throws -> T {
+        let startTime = CFAbsoluteTimeGetCurrent()
         let data: Data = try await request(endpoint: endpoint)
         
         do {
             return try jsonDecoder.decode(responseType, from: data)
         } catch {
+            let duration = CFAbsoluteTimeGetCurrent() - startTime
             if loggingConfig.isEnabled {
-                NetworkLogger.shared.logError(error, for: try endpoint.build())
+                NetworkLogger.shared.logDecodingError(
+                    error,
+                    for: try? endpoint.build(),
+                    targetType: responseType,
+                    responseData: data,
+                    duration: duration
+                )
             }
             throw NetworkError.decodingFailed
         }
@@ -117,11 +125,22 @@ extension NetworkClient {
         responseType: T.Type,
         decoder: JSONDecoder
     ) async throws -> T {
+        let startTime = CFAbsoluteTimeGetCurrent()
         let data: Data = try await request(endpoint: endpoint)
         
         do {
             return try decoder.decode(responseType, from: data)
         } catch {
+            let duration = CFAbsoluteTimeGetCurrent() - startTime
+            if loggingConfig.isEnabled {
+                NetworkLogger.shared.logDecodingError(
+                    error,
+                    for: try? endpoint.build(),
+                    targetType: responseType,
+                    responseData: data,
+                    duration: duration
+                )
+            }
             throw NetworkError.decodingFailed
         }
     }

@@ -85,6 +85,118 @@ public final class NetworkLogger: Sendable {
         logger.error("\(logMessage)")
     }
     
+    // MARK: - Decoding Error Logging
+    public func logDecodingError<T>(
+        _ error: Error,
+        for request: URLRequest?,
+        targetType: T.Type,
+        responseData: Data,
+        duration: TimeInterval? = nil
+    ) {
+        guard #available(iOS 14.0, macOS 11.0, *) else { return }
+        
+        let url = request?.url?.absoluteString ?? "Unknown URL"
+        let method = request?.httpMethod ?? "GET"
+        let typeName = String(describing: targetType)
+        
+        var logMessage = """
+        📦❌ [DECODING ERROR] \(method) \(url)
+        🎯 Target Type: \(typeName)
+        🔥 Decode Error: \(error.localizedDescription)
+        """
+        
+        if let duration = duration {
+            logMessage += "\n⏱️ Duration: \(String(format: "%.3f", duration))s"
+        }
+        
+        // Show detailed decoding error if it's a DecodingError
+        if let decodingError = error as? DecodingError {
+            logMessage += "\n🔍 Detailed Error: \(formatDecodingError(decodingError))"
+        }
+        
+        // Show the raw response data that failed to decode
+        logMessage += "\n📄 Raw Response Data:"
+        logMessage += "\n\(formatFailedDecodeData(responseData))"
+        
+        // Try to show as JSON for better readability
+        if let jsonString = formatAsJSON(responseData) {
+            logMessage += "\n📋 Pretty JSON:"
+            logMessage += "\n\(jsonString)"
+        }
+        
+        logger.error("\(logMessage)")
+    }
+    
+    // MARK: - Private Decoding Helpers
+    private func formatDecodingError(_ error: DecodingError) -> String {
+        switch error {
+        case .typeMismatch(let type, let context):
+            return """
+            🔀 Type Mismatch:
+               Expected: \(type)
+               Path: \(context.codingPath.map { $0.stringValue }.joined(separator: " → "))
+               Description: \(context.debugDescription)
+            """
+            
+        case .valueNotFound(let type, let context):
+            return """
+            🕳️ Value Not Found:
+               Missing: \(type)
+               Path: \(context.codingPath.map { $0.stringValue }.joined(separator: " → "))
+               Description: \(context.debugDescription)
+            """
+            
+        case .keyNotFound(let key, let context):
+            return """
+            🔑 Key Not Found:
+               Missing Key: "\(key.stringValue)"
+               Path: \(context.codingPath.map { $0.stringValue }.joined(separator: " → "))
+               Description: \(context.debugDescription)
+            """
+            
+        case .dataCorrupted(let context):
+            return """
+            💥 Data Corrupted:
+               Path: \(context.codingPath.map { $0.stringValue }.joined(separator: " → "))
+               Description: \(context.debugDescription)
+            """
+            
+        @unknown default:
+            return "❓ Unknown decoding error: \(error)"
+        }
+    }
+    
+    private func formatFailedDecodeData(_ data: Data) -> String {
+        guard data.count > 0 else { return "Empty data" }
+        
+        if data.count > 2048 {
+            return "Large data (\(formatDataSize(data.count))) - showing first 2048 bytes:\n\(formatDataPreview(data, maxBytes: 2048))"
+        }
+        
+        if let string = String(data: data, encoding: .utf8) {
+            return string
+        }
+        
+        return "Binary data (\(formatDataSize(data.count)))"
+    }
+    
+    private func formatAsJSON(_ data: Data) -> String? {
+        guard data.count > 0,
+              let jsonObject = try? JSONSerialization.jsonObject(with: data),
+              let prettyData = try? JSONSerialization.data(withJSONObject: jsonObject, options: [.prettyPrinted, .sortedKeys]),
+              let prettyString = String(data: prettyData, encoding: .utf8) else {
+            return nil
+        }
+        
+        // Limit JSON output size
+        return prettyString.count > 3000 ? String(prettyString.prefix(3000)) + "\n... (truncated)" : prettyString
+    }
+    
+    private func formatDataPreview(_ data: Data, maxBytes: Int) -> String {
+        let previewData = data.prefix(maxBytes)
+        return String(data: previewData, encoding: .utf8) ?? "Binary data preview"
+    }
+    
     // MARK: - Configuration
     public func logConfiguration(_ config: String) {
         guard #available(iOS 14.0, macOS 11.0, *) else { return }
