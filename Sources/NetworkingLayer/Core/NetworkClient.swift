@@ -14,9 +14,6 @@ public actor NetworkClient: NetworkClientProtocol {
         self.jsonDecoder = jsonDecoder
         self.loggingConfig = loggingConfig
         
-        self.jsonDecoder.dateDecodingStrategy = .iso8601
-        self.jsonDecoder.keyDecodingStrategy = .convertFromSnakeCase
-        
         if loggingConfig.isEnabled {
             NetworkLogger.shared.logConfiguration("NetworkClient initialized with logging enabled")
         }
